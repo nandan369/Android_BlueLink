@@ -3,7 +3,10 @@ package com.example.bluelink.activities
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
@@ -29,6 +32,8 @@ class MainActivity : AppCompatActivity() {
     private var bluetoothAdapter: BluetoothAdapter? = null
     private var bluetoothLeScanner: BluetoothLeScanner? = null
 
+    private var bluetoothGatt: BluetoothGatt? = null
+
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
             val device = result.device
@@ -40,10 +45,40 @@ class MainActivity : AppCompatActivity() {
                 val model = BluetoothDeviceModel(
                     name = device.name,
                     address = device.address,
-                    rssi = rssi
+                    rssi = rssi,
+                    device = device
                 )
                 scanResults.add(model)
                 adapter.notifyItemInserted(scanResults.size - 1)
+            }
+        }
+    }
+
+    private val gattCallback = object : BluetoothGattCallback() {
+        override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
+            super.onConnectionStateChange(gatt, status, newState)
+            if (newState == BluetoothProfile.STATE_CONNECTED) {
+                runOnUiThread {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Connected to ${gatt.device.address}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                gatt.discoverServices()  // Move to Stage 2
+            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Disconnected", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            super.onServicesDiscovered(gatt, status)
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                val services = gatt.services
+                runOnUiThread {
+                    Toast.makeText(this@MainActivity, "Services discovered: ${services.size}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -65,9 +100,21 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // Setup RecyclerView
-        adapter = BluetoothDeviceAdapter(scanResults) { device ->
-            Toast.makeText(this, "Connect to ${device.name}", Toast.LENGTH_SHORT).show()
+        adapter = BluetoothDeviceAdapter(scanResults) { deviceModel ->
+            bluetoothLeScanner?.stopScan(scanCallback) // Stop scan first
+
+            bluetoothGatt = deviceModel.device.connectGatt(
+                this,
+                false,
+                gattCallback,
+                BluetoothDevice.TRANSPORT_LE
+            )
+
+            Toast.makeText(this, "Connecting to ${deviceModel.name}", Toast.LENGTH_SHORT).show()
+
         }
+
+
         binding.rvDevices.layoutManager = LinearLayoutManager(this)
         binding.rvDevices.adapter = adapter
 
