@@ -28,6 +28,13 @@
         android:padding="12dp"
         android:layout_marginBottom="16dp" />
 
+    <Button
+        android:id="@+id/btnTestExecution"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Execution"
+        android:layout_marginTop="16dp"/>
+
     <!-- RecyclerView for devices -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvDevices"

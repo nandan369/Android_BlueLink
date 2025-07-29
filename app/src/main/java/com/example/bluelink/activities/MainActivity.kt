@@ -22,6 +22,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bluelink.adapters.BluetoothDeviceAdapter
 import com.example.bluelink.databinding.ActivityMainBinding
 import com.example.bluelink.models.BluetoothDeviceModel
+import android.content.Intent
+import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
 
@@ -114,7 +116,6 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-
         binding.rvDevices.layoutManager = LinearLayoutManager(this)
         binding.rvDevices.adapter = adapter
 
@@ -122,6 +123,13 @@ class MainActivity : AppCompatActivity() {
         binding.btnScan.setOnClickListener {
             checkAndRequestPermissions()
         }
+
+        //set up test execution button
+        binding.btnTestExecution.setOnClickListener {
+            val intent = Intent(this, TestCaseSelectionActivity::class.java)
+            startActivity(intent)
+        }
+
 
         // Initialize Bluetooth adapter
         val bluetoothManager = getSystemService(BLUETOOTH_SERVICE) as BluetoothManager
