@@ -24,6 +24,7 @@ class BluetoothDeviceAdapter(
         with(holder.binding) {
             tvDeviceName.text = device.name ?: "Unnamed Device"
             tvDeviceAddress.text = device.address
+            btnConnect.isEnabled = device.name != null
             tvRssi.text = "RSSI: ${device.rssi} dBm"
             btnConnect.setOnClickListener {
                 onConnectClick(device)
