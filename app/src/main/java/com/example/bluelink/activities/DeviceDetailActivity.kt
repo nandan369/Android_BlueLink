@@ -2,6 +2,7 @@ package com.example.bluelink.activities
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import com.example.bluelink.adapters.DeviceServicesAdapter
 import com.example.bluelink.databinding.ActivityDeviceDetailBinding
 
 class DeviceDetailActivity : AppCompatActivity() {
@@ -21,10 +22,13 @@ class DeviceDetailActivity : AppCompatActivity() {
 
         loadDeviceDetails(deviceName, deviceAddress, rssi)
 
-        binding.button.setOnClickListener {
+        binding.ddLogButton.setOnClickListener {
             // Go to Log History Activity
         }
 
+        // Set up RecyclerView
+        val serviceList = listOf("Service 1", "Service 2", "Service 3")
+        binding.ddRvServices.adapter = DeviceServicesAdapter(serviceList)
 
     }
 
