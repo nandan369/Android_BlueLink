@@ -2,6 +2,7 @@ package com.example.bluelink.activities
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -9,6 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.bluelink.R
 import com.example.bluelink.adapters.BleTestCaseAdapter
 import com.example.bluelink.models.BleTestCasesModel
+import com.example.bluelink.utils.BleTestUtils
+import com.example.bluelink.utils.LogUtils
+import android.util.Log
 
 class TestCaseSelectionActivity : AppCompatActivity() {
 
@@ -20,6 +24,7 @@ class TestCaseSelectionActivity : AppCompatActivity() {
 
         val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
         val btnRunTests = findViewById<Button>(R.id.btnRunTests)
+        val editDutName = findViewById<EditText>(R.id.editDutName) // Make sure this exists in your XML
 
         val testCases = getBleTestCases()
         testCaseAdapter = BleTestCaseAdapter(testCases)
@@ -27,21 +32,48 @@ class TestCaseSelectionActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = testCaseAdapter
 
-        fun getSelectedTestCases(): List<BleTestCasesModel> {
-            return testCases.filter { it.isSelected }
-        }
-
         btnRunTests.setOnClickListener {
             val selectedTests = testCaseAdapter.getSelectedTestCases()
+            val dutName = editDutName.text.toString().trim()
+
             if (selectedTests.isEmpty()) {
                 Toast.makeText(this, "Please select at least one test.", Toast.LENGTH_SHORT).show()
-            } else {
-                val selectedTests: List<BleTestCasesModel> = testCaseAdapter.getSelectedTestCases()
-                val testNames = selectedTests.joinToString(separator = ", ") { it.title }
-                Toast.makeText(this, "Running: $testNames", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            if (dutName.isEmpty()) {
+                Toast.makeText(this, "Please enter DUT name to run tests.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Loop through selected test cases and run each
+            for (test in selectedTests) {
+                when (test.id) {
+                    "TC01" -> runTc01ScanTest(dutName)
+                    // Add more test cases here like:
+                    // "TC04" -> runTc04ConnectTest(dutName)
+                    else -> Toast.makeText(this, "Test ${test.title} not implemented.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
+    }
 
+    private fun runTc01ScanTest(dutName: String) {
+
+        BleTestUtils.scanForDevice(
+            context = this,
+            testCaseName = "TC01",
+            targetDeviceName = dutName,
+            timeoutMillis = 10000
+        ) { success, result ->
+            val logMessage = if (success && result != null) {
+                "TC01 PASS: Found ${result.device.name}"
+            } else {
+                "TC01 FAIL: Device not found or scan failed"
+            }
+            LogUtils.logToFile(this, "TC01", logMessage)
+            Log.d("TestCase_TC01", logMessage)
+        }
     }
 
     private fun getBleTestCases(): List<BleTestCasesModel> {
