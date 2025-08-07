@@ -1,5 +1,8 @@
 package com.example.bluelink.activities
 
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothGattService
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.example.bluelink.adapters.DeviceServicesAdapter
@@ -16,25 +19,25 @@ class DeviceDetailActivity : AppCompatActivity() {
         binding = ActivityDeviceDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        deviceName = intent.getStringExtra("deviceName") ?: "Unknown Device"
-        deviceAddress = intent.getStringExtra("deviceAddress") ?: "Unknown Address"
-        rssi = intent.getIntExtra("rssi", 0)
+        val bluetoothGatt = GattHolder.gatt
+        val connectedDevice = bluetoothGatt?.device
 
-        loadDeviceDetails(deviceName, deviceAddress, rssi)
+        loadDeviceDetails(connectedDevice)
 
         binding.ddLogButton.setOnClickListener {
             // Go to Log History Activity
         }
 
         // Set up RecyclerView
-        val serviceList = listOf("Service 1", "Service 2", "Service 3")
-        binding.ddRvServices.adapter = DeviceServicesAdapter(serviceList)
+        val serviceList = bluetoothGatt?.services
+        binding.ddRvServices.adapter = DeviceServicesAdapter(serviceList as List<BluetoothGattService>)
 
     }
 
-    fun loadDeviceDetails(deviceName: String?, deviceAddress: String?, rssi: Int?) {
-        binding.ddDeviceName.text = deviceName?: "Unknown Device"
-        binding.ddDeviceAddress.text = deviceAddress?: "Unknown Address"
+    fun loadDeviceDetails(connectedDevice: BluetoothDevice?) {
+        binding.ddDeviceName.text = connectedDevice.name?: "Unknown Device"
+        binding.ddDeviceAddress.text = connectedDevice.address?: "Unknown Address"
+        val rssi = connectedDevice.
         if (rssi != null) {
             val rssiText = "RSSI: $rssi dBm"
             binding.ddRssi.text = rssiText

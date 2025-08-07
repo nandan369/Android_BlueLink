@@ -10,6 +10,7 @@ import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
@@ -110,8 +111,12 @@ class MainActivity : AppCompatActivity() {
                 BluetoothDevice.TRANSPORT_LE
             )
 
+            GattHolder.gatt = bluetoothGatt
+
             Toast.makeText(this, "Connecting to ${deviceModel.name}", Toast.LENGTH_SHORT).show()
 
+            val intent = Intent(this, DeviceDetailActivity::class.java)
+            startActivity(intent)
         }
 
 
@@ -166,4 +171,8 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Scan stopped", Toast.LENGTH_SHORT).show()
         }, 10_000)
     }
+}
+
+object GattHolder {
+    var gatt: BluetoothGatt? = null
 }
