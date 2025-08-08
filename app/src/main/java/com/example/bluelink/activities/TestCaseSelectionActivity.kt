@@ -16,6 +16,7 @@ import com.example.bluelink.models.BleTestCasesModel
 import com.example.bluelink.utils.BleTestUtils
 import com.example.bluelink.utils.LogUtils
 import android.bluetooth.BluetoothGatt
+import java.util.UUID
 
 class TestCaseSelectionActivity : AppCompatActivity() {
 
@@ -70,6 +71,7 @@ class TestCaseSelectionActivity : AppCompatActivity() {
                 when (test.id) {
                     "TC01" -> runTc01ScanTest(dutName)
                     "TC02" -> runTc02ConnectTest(dutName)
+                    "TC03" -> runTc03GattReadTest(dutName)
                     else -> Toast.makeText(this, "Test ${test.title} not implemented.", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -110,9 +112,7 @@ class TestCaseSelectionActivity : AppCompatActivity() {
                         device = result.device,
                         onConnected = { gatt ->
                             LogUtils.logToFile(this, "Ble_connect", "✅ Connected to ${result.device.address}")
-                            // Save gatt if you want to disconnect later
                             connectedGatt = gatt
-
                             BleTestUtils.discoverServices(gatt, context = this, testCaseName = "Ble_connect")
                         },
                         onDisconnected = {
@@ -130,13 +130,53 @@ class TestCaseSelectionActivity : AppCompatActivity() {
         }
     }
 
+    private fun runTc03GattReadTest(dutName: String) {
+        val testCaseName = "TC03_GATT_Read"
+
+        BleTestUtils.scanForDevice(
+            context = this,
+            testCaseName = testCaseName,
+            targetDeviceName = dutName,
+            timeoutMillis = 10000
+        ) { success, result ->
+            if (success && result != null) {
+                BleTestUtils.connectToDevice(
+                    context = this,
+                    testCaseName = testCaseName,
+                    device = result.device,
+                    onConnected = { gatt ->
+                        connectedGatt = gatt
+                        BleTestUtils.discoverServices(gatt, context = this, testCaseName = testCaseName)
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            BleTestUtils.performGattRead(
+                                context = this,
+                                bluetoothGatt = gatt,
+                                serviceUUID = UUID.fromString("0000180D-0000-1000-8000-00805f9b34fb"),
+                                characteristicUUID = UUID.fromString("00002A38-0000-1000-8000-00805f9b34fb"),
+                                testCaseName = testCaseName
+                            )
+                        }, 1000)
+                    },
+                    onDisconnected = {
+                        LogUtils.logToFile(this, testCaseName, "ℹ️ Device disconnected.")
+                    },
+                    onFailed = {
+                        LogUtils.logToFile(this, testCaseName, "❌ Connection failed.")
+                    }
+                )
+
+            } else {
+                LogUtils.logToFile(this, testCaseName, "❌ Device not found, skipping test")
+            }
+        }
+    }
 
     private fun getBleTestCases(): List<BleTestCasesModel> {
         return listOf(
             BleTestCasesModel("TC01", "Advertise & Discover", "Verify DUT is discoverable via scan."),
             BleTestCasesModel("TC02", "Connect to DUT", "Test GATT connection initiation."),
-            BleTestCasesModel("TC06", "Bonding", "Test pairing using Just Works or Passkey."),
-            BleTestCasesModel("TC10", "Read Characteristics", "Read characteristic from DUT."),
+            BleTestCasesModel("TC04", "Bonding", "Test pairing using Just Works or Passkey."),
+            BleTestCasesModel("TC03", "Read Characteristics", "Read characteristic from DUT."),
             BleTestCasesModel("TC13", "Notification Test", "Send notification and validate reception."),
             BleTestCasesModel("TC18", "Range Test", "Test BLE connection at various distances.")
         )

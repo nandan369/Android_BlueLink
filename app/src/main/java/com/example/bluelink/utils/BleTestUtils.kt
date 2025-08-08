@@ -12,6 +12,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import java.util.UUID
 
 object BleTestUtils {
 
@@ -166,6 +167,19 @@ object BleTestUtils {
                 }
                 LogUtils.logToFile(context, testCaseName, message)
             }
+
+            override fun onCharacteristicRead(
+                gatt: BluetoothGatt?,
+                characteristic: BluetoothGattCharacteristic?,
+                status: Int
+            ) {
+                if (status == BluetoothGatt.GATT_SUCCESS) {
+                    val value = characteristic?.value?.joinToString(" ") { it.toUByte().toString() }
+                    LogUtils.logToFile(context, testCaseName, "✅ Read success: Value = $value")
+                } else {
+                    LogUtils.logToFile(context, testCaseName, "❌ Read failed with status $status")
+                }
+            }
         }
 
         try {
@@ -214,4 +228,31 @@ object BleTestUtils {
             LogUtils.logToFile(context, testCaseName, err)
         }
     }
+
+    fun performGattRead(
+        context: Context,
+        bluetoothGatt: BluetoothGatt,
+        serviceUUID: UUID,
+        characteristicUUID: UUID,
+        testCaseName: String
+    ) {
+        val service = bluetoothGatt.getService(serviceUUID)
+
+        if (service != null) {
+            val characteristic = service?.getCharacteristic(characteristicUUID)
+            if (characteristic != null) {
+                val success = bluetoothGatt.readCharacteristic(characteristic)
+                if (!success) {
+                    LogUtils.logToFile(context, testCaseName, "❌ Failed to initiate read for $characteristicUUID")
+                } else {
+                    LogUtils.logToFile(context, testCaseName, "🔄 Reading characteristic $characteristicUUID")
+                }
+            } else {
+                LogUtils.logToFile(context, testCaseName, "Characteristic ${characteristicUUID} not found in service 0x180D")
+            }
+        } else {
+            LogUtils.logToFile(context, testCaseName, "Service ${serviceUUID} not found on device")
+        }
+    }
+
 }
