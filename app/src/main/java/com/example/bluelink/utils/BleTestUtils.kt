@@ -1,7 +1,7 @@
 package com.example.bluelink.utils
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
+import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanResult
 import android.content.Context
@@ -111,5 +111,107 @@ object BleTestUtils {
                 onResult(false, null)
             }
         }, timeoutMillis)
+    }
+
+    fun connectToDevice(
+        context: Context,
+        testCaseName: String,
+        device: BluetoothDevice,
+        onConnected: (BluetoothGatt) -> Unit,
+        onDisconnected: () -> Unit,
+        onFailed: () -> Unit
+    ) {
+        val gattCallback = object : BluetoothGattCallback() {
+
+            override fun onConnectionStateChange(
+                gatt: BluetoothGatt,
+                status: Int,
+                newState: Int
+            ) {
+                super.onConnectionStateChange(gatt, status, newState)
+
+                when (newState) {
+                    BluetoothProfile.STATE_CONNECTED -> {
+                        val msg = "✅ Connected to ${device.name}"
+                        Log.i(testCaseName, msg)
+                        LogUtils.logToFile(context, testCaseName, msg)
+
+                        // Delay before executing test logic
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            onConnected(gatt)
+                        }, 2000) // 2 seconds delay
+                    }
+
+                    BluetoothProfile.STATE_DISCONNECTED -> {
+                        val msg = "🔌 Disconnected from ${device.name}"
+                        Log.w(testCaseName, msg)
+                        LogUtils.logToFile(context, testCaseName, msg)
+                        onDisconnected()
+                    }
+
+                    else -> {
+                        val msg = "⚠️ Connection failed or unknown state for ${device.name}"
+                        Log.e(testCaseName, msg)
+                        LogUtils.logToFile(context, testCaseName, msg)
+                        onFailed()
+                    }
+                }
+            }
+
+            override fun onServicesDiscovered(gatt: BluetoothGatt?, status: Int) {
+                super.onServicesDiscovered(gatt, status)
+                val message = when (status) {
+                    BluetoothGatt.GATT_SUCCESS -> "✅ Services discovered on ${gatt?.device?.address}"
+                    else -> "❌ Service discovery failed with status $status"
+                }
+                LogUtils.logToFile(context, testCaseName, message)
+            }
+        }
+
+        try {
+            val msg = "🔗 Initiating connection to ${device.name}..."
+            Log.i(testCaseName, msg)
+            LogUtils.logToFile(context, testCaseName, msg)
+            device.connectGatt(context, false, gattCallback)
+        } catch (e: SecurityException) {
+            val msg = "❌ Connection failed due to SecurityException: ${e.message}"
+            Log.e(testCaseName, msg)
+            LogUtils.logToFile(context, testCaseName, msg)
+            onFailed()
+        }
+    }
+
+    fun discoverServices(
+        gatt: BluetoothGatt?,
+        context: Context,
+        testCaseName: String = "ServiceDiscovery",
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        if (gatt == null) {
+            LogUtils.logToFile(context, testCaseName, "❌ Cannot discover services: GATT is null")
+            onComplete?.invoke(false)
+            return
+        }
+
+        val result = gatt.discoverServices()
+        LogUtils.logToFile(context, testCaseName, if (result) "🔄 Starting service discovery..." else "❌ Failed to start service discovery")
+    }
+
+    fun disconnectGatt(
+        context: Context,
+        testCaseName: String,
+        gatt: BluetoothGatt
+    ) {
+        try {
+            gatt.disconnect()
+            gatt.close()
+            val msg = "🔌 GATT connection closed for ${gatt.device?.name}"
+            Log.i(testCaseName, msg)
+            LogUtils.logToFile(context, testCaseName, msg)
+        } catch (e: Exception) {
+            val err = "❌ Error during disconnect: ${e.message}"
+            Log.e(testCaseName, err)
+            LogUtils.logToFile(context, testCaseName, err)
+        }
     }
 }
