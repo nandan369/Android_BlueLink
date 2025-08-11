@@ -255,4 +255,13 @@ object BleTestUtils {
         }
     }
 
+    fun initiateBonding(device: BluetoothDevice): Boolean {
+        return try {
+            val method = device.javaClass.getMethod("createBond")
+            method.invoke(device) as Boolean
+        } catch (e: Exception) {
+            Log.e("BLE", "Error creating bond", e)
+            false
+        }
+    }
 }

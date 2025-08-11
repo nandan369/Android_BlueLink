@@ -1,5 +1,10 @@
 package com.example.bluelink.activities
 
+import android.bluetooth.BluetoothDevice
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.util.Log
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -16,6 +21,7 @@ import com.example.bluelink.models.BleTestCasesModel
 import com.example.bluelink.utils.BleTestUtils
 import com.example.bluelink.utils.LogUtils
 import android.bluetooth.BluetoothGatt
+import android.content.BroadcastReceiver
 import java.util.UUID
 
 class TestCaseSelectionActivity : AppCompatActivity() {
@@ -72,11 +78,41 @@ class TestCaseSelectionActivity : AppCompatActivity() {
                     "TC01" -> runTc01ScanTest(dutName)
                     "TC02" -> runTc02ConnectTest(dutName)
                     "TC03" -> runTc03GattReadTest(dutName)
+                    "TC04" -> runTc04BondingTest(dutName)
                     else -> Toast.makeText(this, "Test ${test.title} not implemented.", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
+
+    private val bondReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val action = intent?.action
+            if (action == BluetoothDevice.ACTION_BOND_STATE_CHANGED) {
+                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
+                val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE)
+                val prevBondState = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.BOND_NONE)
+
+                when (bondState) {
+                    BluetoothDevice.BOND_BONDING -> {
+                        Log.d("Bonding", "Bonding in progress with ${device?.address}")
+                        LogUtils.logToFile(context!!, "TC04_Bonding", "🔄 Bonding in progress with ${device?.address}")
+                    }
+                    BluetoothDevice.BOND_BONDED -> {
+                        Log.d("Bonding", "Bonding successful with ${device?.address}")
+                        LogUtils.logToFile(context!!, "TC04_Bonding", "✅ Bonding successful with ${device?.address}")
+                        context.unregisterReceiver(this)
+                    }
+                    BluetoothDevice.BOND_NONE -> {
+                        Log.d("Bonding", "Bonding failed with ${device?.address}")
+                        LogUtils.logToFile(context!!, "TC04_Bonding", "❌ Bonding failed with ${device?.address}")
+                        context.unregisterReceiver(this)
+                    }
+                }
+            }
+        }
+    }
+
 
     private fun runTc01ScanTest(dutName: String) {
         BleTestUtils.scanForDevice(
@@ -170,6 +206,53 @@ class TestCaseSelectionActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun runTc04BondingTest(dutName: String) {
+        val testCaseName = "TC04_Bonding"
+
+        BleTestUtils.scanForDevice(
+            context = this,
+            testCaseName = testCaseName,
+            targetDeviceName = dutName,
+            timeoutMillis = 10000
+        ) { success, result ->
+            if (success && result != null) {
+                LogUtils.logToFile(this, testCaseName, "✅ Device found: ${result.device.address}")
+
+                // Register bond receiver
+                val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+                registerReceiver(bondReceiver, filter)
+
+                // Connect first
+                BleTestUtils.connectToDevice(
+                    context = this,
+                    testCaseName = testCaseName,
+                    device = result.device,
+                    onConnected = { gatt ->
+                        connectedGatt = gatt
+                        LogUtils.logToFile(this, testCaseName, "🔗 Connected to device. Starting bonding...")
+                        // Now initiate bonding
+                        val bondStarted = BleTestUtils.initiateBonding(result.device)
+                        if (bondStarted) {
+                            LogUtils.logToFile(this, testCaseName, "🔐 Bonding initiated.")
+                        } else {
+                            LogUtils.logToFile(this, testCaseName, "❌ Bonding initiation failed.")
+                        }
+                    },
+                    onDisconnected = {
+                        LogUtils.logToFile(this, testCaseName, "🔌 Disconnected from device.")
+                    },
+                    onFailed = {
+                        LogUtils.logToFile(this, testCaseName, "❌ Connection failed, bonding skipped.")
+                    }
+                )
+            } else {
+                LogUtils.logToFile(this, testCaseName, "❌ Scan failed or device not found.")
+            }
+        }
+    }
+
+
 
     private fun getBleTestCases(): List<BleTestCasesModel> {
         return listOf(
