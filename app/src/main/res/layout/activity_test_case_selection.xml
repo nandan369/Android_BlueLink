@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layoutTestExecution"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@android:color/white"
+    tools:context=".activities.TestCaseSelectionActivity">
+
+    <!-- Title -->
+    <TextView
+        android:id="@+id/tvTestCaseTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select BLE Test Cases"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"
+        android:textColor="@android:color/black" />
+
+    <!-- DUT Name input -->
+    <EditText
+        android:id="@+id/editDutName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter DUT name"
+        android:inputType="text"
+        android:background="@android:drawable/edit_text"
+        android:padding="12dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="@android:color/darker_gray"
+        android:layout_marginBottom="12dp" />
+
+    <!-- RecyclerView for BLE test case list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
+        android:scrollbars="vertical" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/logRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#EEEEEE"
+        android:padding="8dp"/>
+
+    <!-- Run Tests Button -->
+    <Button
+        android:id="@+id/btnRunTests"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Run Selected Tests"
+        android:textAllCaps="false"
+        android:layout_marginTop="16dp"
+        android:padding="12dp" />
+
+</LinearLayout>
