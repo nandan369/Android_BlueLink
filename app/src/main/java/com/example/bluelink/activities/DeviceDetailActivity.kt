@@ -110,7 +110,6 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             val success = bluetoothGatt.setCharacteristicNotification(characteristic, enable)
             if (success) {
                 // You also need to write to the Client Characteristic Configuration Descriptor (CCCD)
-                // if the characteristic has PROPERTY_NOTIFY or PROPERTY_INDICATE
                 val cccdUuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb") // Standard CCCD UUID
                 val descriptor = characteristic.getDescriptor(cccdUuid)
                 if (descriptor != null) {
@@ -147,6 +146,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
     private val gattCallback = object : BluetoothGattCallback() {
 
         // Response from Characteristic Read
+        // Read function for API level 33 and below
         @Suppress("DEPRECATION")
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
@@ -156,6 +156,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             val value = characteristic.value ?: byteArrayOf()
             onCharacteristicReadBody(gatt, characteristic, value, status)
         }
+        // Read function for API level 34 and above
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -165,6 +166,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             onCharacteristicReadBody(gatt, characteristic, value, status)
         }
 
+        // Helper function for onCharacteristicReads
         fun onCharacteristicReadBody(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
@@ -223,12 +225,30 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
         }
 
         // Response when the notification is enabled
+        // Change function for API level 33 and below
+        @Suppress("DEPRECATION")
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
+            val value = characteristic.value?: byteArrayOf()
+            onCharacteristicChangedBody(gatt, characteristic, value)
+        }
+
+        // Change function for API level 34 and above
         override fun onCharacteristicChanged(
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray
         ) {
-            super.onCharacteristicChanged(gatt, characteristic, value)
+            onCharacteristicChangedBody(gatt, characteristic, value)
+        }
+
+        private fun onCharacteristicChangedBody(
+            gatt: BluetoothGatt,
+            characteristic: android.bluetooth.BluetoothGattCharacteristic,
+            value: ByteArray
+        ) {
             runOnUiThread {
                 val changedValue = value
                 Toast.makeText(this@DeviceDetailActivity, "Characteristic value changed: $changedValue", Toast.LENGTH_SHORT).show()

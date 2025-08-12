@@ -24,7 +24,7 @@ class DeviceServicesAdapter(
         RecyclerView.ViewHolder(binding.root) {
         fun bind(service: BluetoothGattService) {
             val uuid = service.uuid.toString().substring(4, 8)
-            binding.itemDeviceServiceName.text = uuidToName(uuid)
+            binding.itemDeviceServiceName.text = uuidToString(uuid)
             binding.itemDeviceServiceUuid.text = uuid
             binding.itemDeviceServiceType.text = service.type.toString()
         }
@@ -38,7 +38,7 @@ class DeviceServicesAdapter(
             listener: CharacteristicActionListener?
         ) {
             val uuid = characteristic.uuid.toString().substring(4, 8)
-            binding.tvCharacteristicName.text = uuidToName(uuid)
+            binding.tvCharacteristicName.text = uuidToString(uuid)
             binding.tvCharacteristicUuidNumber.text = uuid
             binding.tvCharacteristicProperties.text = characteristic.properties.toString()
 
@@ -48,8 +48,6 @@ class DeviceServicesAdapter(
                 binding.characteristicReadButton.isVisible = true
                 binding.characteristicReadButton.setOnClickListener {
                     // Handle read button click
-                    // Show a dialog with the read value
-                    // Save the read value to SharedPreferences
                     listener?.onReadClicked(characteristic)
                 }
             }
@@ -71,7 +69,9 @@ class DeviceServicesAdapter(
                                 listener?.onWriteClicked(characteristic,value.toByteArray())
                             }
                         }
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton("Cancel") { dialog, _ ->
+                            dialog.dismiss()
+                        }
                         .create()
                     alert.show()
                 }
@@ -92,7 +92,9 @@ class DeviceServicesAdapter(
                             val enable = selectedOption == 0
                             listener?.onNotifyClicked(characteristic, enable)
                         }
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton("Cancel") { dialog, _ ->
+                            dialog.dismiss()
+                        }
                         .create()
                     alert.show()
                 }
@@ -145,18 +147,24 @@ class DeviceServicesAdapter(
     }
 
     companion object {
-        fun uuidToName(uuid: String): String {
+        fun uuidToString(uuid: String): String {
             return when (uuid) {
                 "1800" -> "Generic Access"
                 "1801" -> "Generic Attribute"
-                "180a" -> "Device Information"
-                "180f" -> "Battery Service"
-                "180d" -> "Heart Rate"
+                "180A" -> "Device Information"
+                "180F" -> "Battery Service"
+                "180D" -> "Heart Rate"
                 "1810" -> "Blood Pressure"
                 "1811" -> "Alert Notification"
-                "1812" -> "Running Speed and Cadence"
-                "1813" -> "Pulse Oximeter"
-                "1814" -> "Pulse Rate"
+                "1812" -> "Human Interface Device"
+                "1813" -> "Scan Parameters"
+                "1814" -> "Running Speed and Cadence"
+                "1815" -> "Automation IO"
+                "1816" -> "Cycling Speed and Cadence"
+                "1818" -> "Cycling Power"
+                "1819" -> "Location and Navigation"
+                "181A" -> "Environmental Sensing"
+                "181B" -> "Body Composition"
                 else -> "Unknown Service"
             }
         }
