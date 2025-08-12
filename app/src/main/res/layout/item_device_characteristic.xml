@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/tvCharacteristicName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Unknown Characteristic"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/tvCharacteristicUuidHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="UUID: "
+        android:textStyle="bold"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicName" />
+
+
+    <TextView
+        android:id="@+id/tvCharacteristicUuidNumber"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="uuid Number"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@+id/tvCharacteristicUuidHeader"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicName" />
+
+    <TextView
+        android:id="@+id/tvCharacteristicPropertiesHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Properties: "
+        android:textStyle="bold"
+        android:textSize="16sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicUuidNumber" />
+
+    <TextView
+        android:id="@+id/tvCharacteristicProperties"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read, Write, Notify"
+        android:textSize="16sp"
+        app:layout_constraintStart_toEndOf="@+id/tvCharacteristicPropertiesHeader"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicUuidNumber" />
+
+    <ImageButton
+        android:id="@+id/characteristicNotifyButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="TODO"
+        android:src="@drawable/ic_notification"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicProperties" />
+
+    <ImageButton
+        android:id="@+id/characteristicWriteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="TODO"
+        android:src="@drawable/ic_arrow_upward"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/characteristicNotifyButton"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicProperties" />
+
+
+    <ImageButton
+        android:id="@+id/characteristicReadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="TODO"
+        android:src="@drawable/ic_arrow_down"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/characteristicWriteButton"
+        app:layout_constraintTop_toBottomOf="@+id/tvCharacteristicProperties" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
