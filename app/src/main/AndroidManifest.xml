@@ -35,6 +35,7 @@
         </activity>
 
         <activity android:name=".activities.TestCaseSelectionActivity" />
+        <activity android:name=".activities.DeviceDetailActivity" />
     </application>
 
 </manifest>

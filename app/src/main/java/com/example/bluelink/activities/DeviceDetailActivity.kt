@@ -1,6 +1,7 @@
 package com.example.bluelink.activities
 
 import android.Manifest
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
@@ -14,13 +15,15 @@ import com.example.bluelink.adapters.DeviceServicesAdapter
 import com.example.bluelink.databinding.ActivityDeviceDetailBinding
 import java.util.UUID
 
-class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.CharacteristicActionListener {
+class DeviceDetailActivity : AppCompatActivity(),
+    DeviceServicesAdapter.CharacteristicActionListener {
     private lateinit var binding: ActivityDeviceDetailBinding
     private lateinit var deviceServicesAdapter: DeviceServicesAdapter
     private lateinit var bluetoothGatt: BluetoothGatt
     private var deviceName: String? = null
     private var deviceAddress: String? = null
     private var rssi: Int? = 0
+    private lateinit var connectedDevice: BluetoothDevice
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,18 +32,18 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
         setContentView(binding.root)
 
         bluetoothGatt = GattHolder.gatt!!
-        val connectedDevice = bluetoothGatt.device
+        connectedDevice = bluetoothGatt.device
 
         loadDeviceDetails(bluetoothGatt)
 
         binding.ddLogButton.setOnClickListener {
-            // Go to Log History Activity
+            // Set up RecyclerView
+            val serviceAndCharacteristicList = extractCharacteristics(bluetoothGatt?.services)
+            deviceServicesAdapter = DeviceServicesAdapter(serviceAndCharacteristicList, this)
+            binding.ddRvServices.adapter = deviceServicesAdapter
         }
 
-        // Set up RecyclerView
-        val serviceAndCharacteristicList = extractCharacteristics(bluetoothGatt?.services)
-        deviceServicesAdapter = DeviceServicesAdapter(serviceAndCharacteristicList, this)
-        binding.ddRvServices.adapter = deviceServicesAdapter
+
     }
 
     fun extractCharacteristics(serviceList: List<BluetoothGattService>?): List<Any> {
@@ -77,7 +80,11 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             if (success) {
                 Toast.makeText(this, "Reading Characteristic...", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Failed to read characteristic for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to read characteristic for ${characteristic.uuid}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -85,17 +92,23 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     override fun onWriteClicked(
         characteristic: BluetoothGattCharacteristic,
-        value: ByteArray) {
+        value: ByteArray
+    ) {
         // TODO: Implement write logic
         if (::bluetoothGatt.isInitialized) {
             characteristic.value = value // Set the value to write
-            characteristic.writeType = BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT // Or WRITE_TYPE_NO_RESPONSE
+            characteristic.writeType =
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT // Or WRITE_TYPE_NO_RESPONSE
             val success = bluetoothGatt.writeCharacteristic(characteristic)
             if (success) {
                 // Result in BluetoothGattCallback.onCharacteristicWrite
                 Toast.makeText(this, "Writing characteristic...", Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(this, "Failed to initiate write for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to initiate write for ${characteristic.uuid}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -110,7 +123,8 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             val success = bluetoothGatt.setCharacteristicNotification(characteristic, enable)
             if (success) {
                 // You also need to write to the Client Characteristic Configuration Descriptor (CCCD)
-                val cccdUuid = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb") // Standard CCCD UUID
+                val cccdUuid =
+                    UUID.fromString("00002902-0000-1000-8000-00805f9b34fb") // Standard CCCD UUID
                 val descriptor = characteristic.getDescriptor(cccdUuid)
                 if (descriptor != null) {
                     val value = if (enable) {
@@ -127,17 +141,33 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
                         descriptor.value = value
                         val descWriteSuccess = bluetoothGatt.writeDescriptor(descriptor)
                         if (!descWriteSuccess) {
-                            Toast.makeText(this, "Failed to write CCCD for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "Failed to write CCCD for ${characteristic.uuid}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             val action = if (enable) "Enabling" else "Disabling"
-                            Toast.makeText(this, "$action notifications for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this,
+                                "$action notifications for ${characteristic.uuid}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 } else {
-                    Toast.makeText(this, "CCCD not found for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        "CCCD not found for ${characteristic.uuid}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             } else {
-                Toast.makeText(this, "Failed to set notification for ${characteristic.uuid}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    "Failed to set notification for ${characteristic.uuid}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -156,6 +186,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             val value = characteristic.value ?: byteArrayOf()
             onCharacteristicReadBody(gatt, characteristic, value, status)
         }
+
         // Read function for API level 34 and above
         override fun onCharacteristicRead(
             gatt: BluetoothGatt,
@@ -171,15 +202,24 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray,
-            status: Int) {
+            status: Int
+        ) {
             runOnUiThread {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
                     // TODO: cast value to the correct type from byte
                     val pretty = decodeRead(characteristic, value)
                     // TODO: Save the read value to a SharedPreferences or Room database
-                    Toast.makeText(this@DeviceDetailActivity, "Characteristic value: $value", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Characteristic value: $value",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(this@DeviceDetailActivity, "Failed to read characteristic!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Failed to read characteristic!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -188,7 +228,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             characteristic: BluetoothGattCharacteristic,
             value: ByteArray
         ) {
-            val short = shortUuid(characteristic.uuid)
+//            val short = shortUuid(characteristic.uuid)
         }
 
         // Response from Characteristic Write
@@ -200,10 +240,18 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             super.onCharacteristicWrite(gatt, characteristic, status)
             runOnUiThread {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Toast.makeText(this@DeviceDetailActivity, "Characteristic value written successfully!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Characteristic value written successfully!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     // TODO: Save the written value to a SharedPreferences or Room database
                 } else {
-                    Toast.makeText(this@DeviceDetailActivity, "Failed to write characteristic!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Failed to write characteristic!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -217,9 +265,17 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             super.onDescriptorWrite(gatt, descriptor, status)
             runOnUiThread {
                 if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Toast.makeText(this@DeviceDetailActivity, "Descriptor written successfully!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Descriptor written successfully!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(this@DeviceDetailActivity, "Failed to write descriptor!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@DeviceDetailActivity,
+                        "Failed to write descriptor!",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -231,7 +287,7 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
-            val value = characteristic.value?: byteArrayOf()
+            val value = characteristic.value ?: byteArrayOf()
             onCharacteristicChangedBody(gatt, characteristic, value)
         }
 
@@ -251,7 +307,11 @@ class DeviceDetailActivity : AppCompatActivity(), DeviceServicesAdapter.Characte
         ) {
             runOnUiThread {
                 val changedValue = value
-                Toast.makeText(this@DeviceDetailActivity, "Characteristic value changed: $changedValue", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@DeviceDetailActivity,
+                    "Characteristic value changed: $changedValue",
+                    Toast.LENGTH_SHORT
+                ).show()
                 // TODO: Save the changed value to a SharedPreferences or Room database
             }
         }

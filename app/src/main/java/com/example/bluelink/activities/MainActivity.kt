@@ -23,8 +23,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.bluelink.adapters.BluetoothDeviceAdapter
 import com.example.bluelink.databinding.ActivityMainBinding
 import com.example.bluelink.models.BluetoothDeviceModel
-import android.content.Intent
-import android.widget.Button
 
 class MainActivity : AppCompatActivity() {
 
@@ -75,12 +73,17 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             super.onServicesDiscovered(gatt, status)
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 val services = gatt.services
                 runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Services discovered: ${services.size}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Services discovered: ${services.size}",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -155,7 +158,11 @@ class MainActivity : AppCompatActivity() {
         if (missing.isNotEmpty()) {
             permissionRequestLauncher.launch(missing.toTypedArray())
         } else if (!isLocationEnabled()) {
-            Toast.makeText(this, "Please enable Location services to scan Bluetooth devices.", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Please enable Location services to scan Bluetooth devices.",
+                Toast.LENGTH_LONG
+            ).show()
         } else {
             startBleScan()
         }
