@@ -63,14 +63,14 @@ class DeviceDetailActivity : AppCompatActivity(),
     fun loadDeviceDetails(bluetoothGatt: BluetoothGatt) {
         binding.ddDeviceName.text = bluetoothGatt.device.name ?: "Unknown Device"
         binding.ddDeviceAddress.text = bluetoothGatt.device.address ?: "Unknown Address"
-        // TODO: grab RSSI value from device correctly
-//        val rssi = connectedDevice.rssi
-//        if (rssi != null) {
-//            val rssiText = "RSSI: $rssi dBm"
-//            binding.ddRssi.text = rssiText
-//        } else {
-//            binding.ddRssi.text = "RSSI: Unknown"
-//        }
+
+        val rssi = intent.getIntExtra("deviceRssi", 0)
+        if (rssi != 0) {
+            val rssiText = "RSSI: $rssi dBm"
+            binding.ddRssi.text = rssiText
+        } else {
+            binding.ddRssi.text = "RSSI: Unknown"
+        }
     }
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)

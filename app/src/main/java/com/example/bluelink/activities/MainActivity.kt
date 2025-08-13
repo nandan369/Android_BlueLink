@@ -121,6 +121,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "Connecting to ${deviceModel.name}", Toast.LENGTH_SHORT).show()
 
             val intent = Intent(this, DeviceDetailActivity::class.java)
+            intent.putExtra("deviceRssi", deviceModel.rssi)
             startActivity(intent)
         }
 
